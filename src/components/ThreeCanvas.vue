@@ -8,13 +8,12 @@ import { objectDetection, objectSelection } from "../utils/getCoordinates.js";
 import { createLine } from "../drawModels/line.js";
 import { createCircle, updateCircle } from "../drawModels/circle.js";
 import { hoverObjectColorChanger } from "../utils/getCoordinates.js";
-
+import { verticalLine } from "@/utils/makePerpendicular.js";
 const props = defineProps({
   objectType: String,
 });
 
 const emit = defineEmits(["clearCanvas"]);
-
 let scene, camera, renderer, axesHelper;
 let isDrawing = false;
 let startCoordinate = null;
@@ -85,7 +84,7 @@ function parallelizeVectors() {
 }
 
 function initThreeJS() {
-  axesHelper = new THREE.AxesHelper(1000);
+  // axesHelper = new THREE.AxesHelper(1000);
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(
     75,
@@ -94,7 +93,7 @@ function initThreeJS() {
     1000
   );
   camera.position.z = 250;
-  scene.add(axesHelper);
+  // scene.add(axesHelper);
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.querySelector("#wrapper").appendChild(renderer.domElement);
@@ -104,7 +103,6 @@ function initThreeJS() {
   window.addEventListener("mousemove", onMouseMove);
   renderer.setAnimationLoop(animate);
 }
-
 let selected = [];
 
 function onMouseDown(event) {
@@ -113,17 +111,14 @@ function onMouseDown(event) {
 
   if (props.objectType === "select") {
     objectSelection(event, camera, scene, selectedLines.value);
-    // for (let line of Array.from(selectedLines.value)) {
-    //   console.log(line);
-    // }
   }
 
   if (props.objectType === "verticall") {
     let container = Array.from(selectedLines.value);
-    container[0].material.color.set("orange");
-    container[1].material.color.set("orange");
-    console.log((container[0].geometry.attributes.position.array[0] += 50));
-    container[0].geometry.attributes.position.needsUpdate = true;
+    if (Boolean(container[0])) {
+      let intersectionPoint = verticalLine(container[0], container[1]);
+      selectedLines.value.clear();
+    }
   }
 
   if (!isDrawing) {
@@ -219,6 +214,12 @@ watch(
       clearCanvas();
     } else {
       resetDrawingState();
+    }
+    if (props.objectType === "verticall") {
+      verticalLine(
+        Array.from(selectedLines.value)[0],
+        Array.from(selectedLines.value)[1]
+      );
     }
   }
 );
